@@ -1,6 +1,8 @@
 '''Test file for badminton elimination lab created for Advanced Algorithms
 Spring 2021 at Olin College.'''
 
+#NOTE: teams5 test case is added for bound situation where every team is at tie.
+
 from badminton_elimination import Division
 
 
