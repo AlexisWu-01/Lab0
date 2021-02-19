@@ -8,7 +8,7 @@ import picos as pic
 import networkx as nx
 import itertools
 import cvxopt
-
+import matplotlib.pyplot as plt
 
 class Division:
     '''
@@ -77,7 +77,6 @@ class Division:
                 flag1 = self.network_flows(saturated_edges)
             elif solver == "Linear Programming":
                 flag1 = self.linear_programming(saturated_edges)
-
         return flag1
 
     def create_network(self, teamID):
@@ -92,9 +91,24 @@ class Division:
         '''
 
         saturated_edges = {}
-
+        team = self.teams[teamID]
+        # for team
         #TODO: implement this
-
+        self.G = nx.DiGraph()
+        self.G.add_node('S')
+        self.G.add_node('T')
+        for i in range(len(self.teams)):
+            if i != teamID:
+                self.G.add_node('team'+str(i))
+                for j in range(i+1,len(self.teams)):
+                    if j != teamID:
+                        saturated_edges[i,j] =  self.teams[i].against[j]
+                        # print(i,j,saturated_edges[i,j])
+                        self.G.add_node(str(i)+'+'+str(j))
+                        self.G.add_edge('S',str(i)+'+'+str(j),weight=saturated_edges[i,j],capacity=saturated_edges[i,j])
+                        self.G.add_edge(str(i)+'+'+str(j),'team'+str(i),capacity=saturated_edges[i,j])
+                        self.G.add_edge(str(i)+'+'+str(j),'team'+str(j),capacity=saturated_edges[i,j])
+                self.G.add_edge('team'+str(i),'T',capacity=self.teams[teamID].wins+self.teams[teamID].remaining-self.teams[i].wins)
         return saturated_edges
 
     def network_flows(self, saturated_edges):
@@ -123,12 +137,35 @@ class Division:
         the amount of additional games they have against each other
         returns True if team is eliminated, False otherwise
         '''
-
+        # print(self.G.edges(data=True))
+        c = {}
+        # print(self.G.edges(data=True))
+        for e in sorted(self.G.edges(data=True)):
+            c[(e[0],e[1])] = e[2]['capacity']
+        cc=pic.new_param('c',c)
+        s = 'S'
+        t = 'T'
         maxflow=pic.Problem()
+        f = {}
+        for e in self.G.edges():
+            f[e] = maxflow.add_variable('f[{0}]'.format(e))
+        
+        F=maxflow.add_variable('F')
+        maxflow.add_constraint(pic.flow_Constraint(
+        self.G, f, source='S', sink='T', capacity='capacity', flow_value=F, graphName='G'))
 
-        #TODO: implement this
-        # we recommend using the 'cvxopt' solver once you set up the problem
+        # Set the objective.
+        maxflow.set_objective('max', F)
+        # Solve the problem.
+        maxflow.solve(solver='cvxopt')
 
+        for e in self.G.edges(data=True):
+            f[(e[0],e[1])] = float("%.2f" % round(f[(e[0],e[1])], 2))
+            # print(e,f[(e[0],e[1])])
+            if e[1] == t:
+                if abs(e[2]['capacity']-f[(e[0],e[1])]) < 1e-6:
+                    return True
+        
         return False
 
 
