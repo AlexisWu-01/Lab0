@@ -45,15 +45,16 @@ def test_teams2():
             assert_eliminated(division, team)
     print("test_teams2 completed")
 
+
 def test_teams4():
     '''Runs all test cases on the input matrix that was given in the lab
     description. It is stored in teams4.txt.
     '''
     division = Division("teams4.txt")
     for (ID, team) in division.teams.items():
-        if team.name == "Prava" or team.name == "Vicky":
+        if team.name == "Shashank" or team.name == "Cassandra":
             assert_eliminated(division, team)
-        elif team.name == "Emily" or team.name == "Shashank":
+        elif team.name == "Sherrie" or team.name == "Manu":
             assert_not_eliminated(division, team)
     print("test_teams4 completed")
 
